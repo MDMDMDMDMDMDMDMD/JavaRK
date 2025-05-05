@@ -39,20 +39,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = parseJwt(request);
             if (jwt != null) {
+                logger.debug("JWT token found in request");
+                
                 // First try local validation
-                if (jwtUtils.validateToken(jwt)) {
+                boolean localValidation = jwtUtils.validateToken(jwt);
+                logger.debug("Local JWT validation result: {}", localValidation);
+                
+                if (localValidation) {
                     Authentication authentication = jwtUtils.getAuthentication(jwt);
                     SecurityContextHolder.getContext().setAuthentication(authentication);
+                    logger.debug("Authentication set in SecurityContext using local validation");
                 } 
                 // If local validation fails, try validating with auth service
-                else if (validateJwtTokenWithAuthService(jwt)) {
-                    String username = jwtUtils.getUsernameFromToken(jwt);
-                    Authentication authentication = jwtUtils.getAuthentication(jwt);
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                else {
+                    logger.debug("Local validation failed, trying auth service validation");
+                    boolean remoteValidation = validateJwtTokenWithAuthService(jwt);
+                    logger.debug("Remote JWT validation result: {}", remoteValidation);
+                    
+                    if (remoteValidation) {
+                        String username = jwtUtils.getUsernameFromToken(jwt);
+                        Authentication authentication = jwtUtils.getAuthentication(jwt);
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        logger.debug("Authentication set in SecurityContext using remote validation");
+                    } else {
+                        logger.warn("Both local and remote token validation failed");
+                    }
                 }
+            } else {
+                logger.debug("No JWT token found in request");
             }
         } catch (Exception e) {
             logger.error("Cannot set user authentication: {}", e.getMessage());
+            if (e.getCause() != null) {
+                logger.error("Caused by: {}", e.getCause().getMessage());
+            }
         }
 
         filterChain.doFilter(request, response);
@@ -70,20 +90,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private boolean validateJwtTokenWithAuthService(String token) {
         try {
+            logger.info("Attempting to validate token with auth service at: {}", authServiceUrl);
+            
             // Call auth service to validate token
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + token);
+            headers.set("Content-Type", "application/json");
             HttpEntity<String> entity = new HttpEntity<>(headers);
             
+            String validateUrl = authServiceUrl + "/api/auth/validate";
+            logger.debug("Sending request to: {}", validateUrl);
+            
             ResponseEntity<?> response = restTemplate.exchange(
-                    authServiceUrl + "/api/auth/validate",
+                    validateUrl,
                     HttpMethod.GET,
                     entity,
                     Object.class);
             
+            logger.info("Token validation response status: {}", response.getStatusCode());
             return response.getStatusCode().is2xxSuccessful();
         } catch (Exception e) {
             logger.error("Token validation error: {}", e.getMessage());
+            logger.error("Token validation exception type: {}", e.getClass().getName());
+            if (e.getCause() != null) {
+                logger.error("Caused by: {}", e.getCause().getMessage());
+            }
             return false;
         }
     }

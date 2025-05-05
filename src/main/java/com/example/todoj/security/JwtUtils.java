@@ -22,7 +22,7 @@ public class JwtUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
-    @Value("${jwt.secret:defaultSecretKeyForDevelopmentPurposesOnlyChangeInProduction}")
+    @Value("${auth.jwt.secret:${jwt.secret:bezKoderSecretKeyBezKoderSecretKeyBezKoderSecretKeyBezKoderSecretKeyBezKoderSecretKey}}")
     private String jwtSecret;
 
     /**

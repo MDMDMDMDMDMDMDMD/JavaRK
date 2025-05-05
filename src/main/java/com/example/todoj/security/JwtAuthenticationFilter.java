@@ -125,11 +125,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
         List<String> publicPaths = Arrays.asList(
-            "/api/public/",
-            "/api/auth/",
-            "/actuator/",
-            "/v3/api-docs/",
-            "/swagger-ui/"
+            "/api/public",
+            "/api/auth",
+            "/actuator",
+            "/v3/api-docs",
+            "/swagger-ui"
         );
         
         // Check if the request path starts with any of the public paths

@@ -17,6 +17,8 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -117,5 +119,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
             return false;
         }
+    }
+    
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getRequestURI();
+        List<String> publicPaths = Arrays.asList(
+            "/api/public/",
+            "/api/auth/",
+            "/actuator/",
+            "/v3/api-docs/",
+            "/swagger-ui/"
+        );
+        
+        // Check if the request path starts with any of the public paths
+        for (String publicPath : publicPaths) {
+            if (path.startsWith(publicPath)) {
+                logger.debug("Skipping JWT filter for public path: {}", path);
+                return true;
+            }
+        }
+        
+        // Also skip for swagger-ui.html
+        if (path.equals("/swagger-ui.html")) {
+            return true;
+        }
+        
+        return false;
     }
 }

@@ -40,7 +40,7 @@ The application was experiencing circular dependency issues between `JwtAuthenti
 - `src/main/java/com/example/todoj/controller`: Contains the TodoController and authentication-related controllers
 - `src/main/java/com/example/todoj/security`: Contains security configuration and JWT utilities
 
-## API Endpoints
+## API Endpoint
 
 ### Todo Endpoints (Authenticated)
 
